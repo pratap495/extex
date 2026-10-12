@@ -5,6 +5,7 @@
   "main": "index.js",
   "scripts": {
     "test": "node verify.js",
+    "test:production": "node verify-production.js",
     "build": "node build.js",
     "dev": "node server.js"
   },

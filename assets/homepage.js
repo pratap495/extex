@@ -1,3 +1,4 @@
+// Browser entrypoint: loaded with defer by index.html, never as a server handler.
 const menuToggle = document.querySelector('.menu-toggle');
 const navigation = document.querySelector('#navigation');
 const siteHeader = document.querySelector('.site-header');
