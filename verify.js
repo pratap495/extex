@@ -29,11 +29,11 @@ const fs = require('node:fs');
       await page.locator('.menu-toggle').click();
       assert.equal(await page.locator('.menu-toggle').getAttribute('aria-expanded'), 'true');
     }
-    await page.locator('.dropdown > button').first().click();
-    await page.locator('#products-menu').waitFor({ state: 'visible' });
+    assert.equal(await page.locator('.source-navigation > a').count(), 8);
+    await page.locator('[aria-controls="quality-menu"]').click();
+    assert.equal(await page.locator('#quality-menu a').count(), 7);
     await page.keyboard.press('Escape');
-    assert.equal(await page.locator('.dropdown > button').first().getAttribute('aria-expanded'), 'false');
-    console.log(`${width}px: no overflow, all images loaded, anchors valid, menus work`);
+    console.log(`${width}px: no overflow, all images loaded, anchors valid, header links work`);
   }
   await page.locator('[name="name"]').fill('QA Example');
   await page.locator('[name="email"]').fill('invalid');

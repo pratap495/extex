@@ -63,7 +63,7 @@ if ('IntersectionObserver' in window && !matchMedia('(prefers-reduced-motion: re
   }), { threshold: 0.08 });
   document.querySelectorAll('.reveal').forEach(element => { element.classList.add('ready'); observer.observe(element); });
 }
-document.querySelector('#quote-form').addEventListener('submit', event => {
+document.querySelector('#quote-form')?.addEventListener('submit', event => {
   event.preventDefault();
   const data = new FormData(event.currentTarget);
   const body = `Name: ${data.get('name')}\nEmail: ${data.get('email')}\nPhone: ${data.get('phone') || 'Not supplied'}\nProduct: ${data.get('product')}\n\n${data.get('message')}`;
@@ -73,3 +73,40 @@ document.querySelector('#quote-form').addEventListener('submit', event => {
   document.querySelector('.form-status').textContent = 'Your inquiry is ready. Open the email draft below, then send it from your email app. Nothing has been sent yet.';
 });
 document.querySelector('#year').textContent = new Date().getFullYear();
+
+// Public enquiry forms prepare drafts; they never report an unsent message as sent.
+const inquiryParams = new URLSearchParams(window.location.search);
+document.querySelectorAll('form[data-inquiry]').forEach(form => {
+  for (const key of ['product', 'role']) {
+    const value = inquiryParams.get(key);
+    const field = form.elements.namedItem(key);
+    if (!value || !field) continue;
+    if (field.tagName === 'SELECT' && !Array.from(field.options).some(option => option.value === value)) {
+      field.add(new Option(value.slice(0, 150), value.slice(0, 150)));
+    }
+    field.value = value.slice(0, 150);
+  }
+  form.addEventListener('submit', event => {
+    event.preventDefault();
+    const data = new FormData(form);
+    const body = Array.from(data, ([name, value]) => {
+      const readableValue = value instanceof File
+        ? (value.name ? value.name + ' (attach this file manually before sending)' : 'No file selected')
+        : value;
+      return name[0].toUpperCase() + name.slice(1) + ': ' + readableValue;
+    }).join('\n\n');
+    const draft = form.querySelector('.email-draft');
+    draft.href = `mailto:info@extekprofiles.com?subject=${encodeURIComponent(form.dataset.inquiry)}&body=${encodeURIComponent(body)}`;
+    draft.hidden = false;
+    form.querySelector('.form-status').textContent = 'Your email draft is ready. Open it below and send it from your email app. Nothing has been sent yet.' + (form.dataset.inquiry === 'Career application' ? ' Attach your CV before sending.' : '');
+  });
+});
+const catalogueFilter = document.querySelector('[data-product-filter]');
+catalogueFilter?.addEventListener('change', () => {
+  let count = 0;
+  document.querySelectorAll('[data-category]').forEach(card => {
+    card.hidden = catalogueFilter.value !== 'all' && card.dataset.category !== catalogueFilter.value;
+    if (!card.hidden) { count++; card.classList.add('visible'); }
+  });
+  document.querySelector('[data-product-count]').textContent = `${count} ${count === 1 ? 'product' : 'products'}`;
+});

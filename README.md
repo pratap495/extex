@@ -1,5 +1,39 @@
 # Extek Profiles homepage
 
+## Complete static website
+
+The project now includes 15 local pages, all using the existing green/slate design:
+
+| Page | File |
+| --- | --- |
+| Home | `index.html` |
+| About | `about.html` |
+| Product catalogue (11 categories) | `products.html` |
+| Quality assurance | `quality.html` |
+| Profile cutting | `profile-cutting.html` |
+| Fabrication | `fabrication.html` |
+| Profile design | `profile-design.html` |
+| Materials | `materials.html` |
+| Perforated aluminium | `perforated-aluminium.html` |
+| Industries (6 sectors) | `industries.html` |
+| Partners and procurement | `partners-procurement.html` |
+| Sales and marketing | `sales-marketing.html` |
+| Careers | `careers.html` |
+| Contact | `contact.html` |
+| Client portal handoff | `client-login.html` |
+
+`generate-pages.js` contains the remaining 13 pages' content and reusable layouts, and derives their header/footer from `index.html`. `npm run build` regenerates those pages before copying all 15 into `dist/`. Edit that generator for generated-page content changes; direct changes to those 13 HTML files will be overwritten at build time. Home and About remain hand-authored HTML.
+
+Content is adapted from the corresponding company pages at https://extekprofiles.com/, with grammar cleaned up. The full catalogue, quality stages, fabrication methods, design resources, material properties, industry descriptions and business enquiry fields are represented. Illustrations are used where suitable verified photographs are unavailable. No new certifications, employee counts or production statistics have been added.
+
+Vendor, dealer, career and contact forms validate inputs and prepare an email draft addressed to `info@extekprofiles.com`; visitors must send it from their email application. Career applicants must attach their CV to the email themselves. Files are not uploaded and forms do not claim that a message has been sent. Product and job links prefill the relevant enquiry field.
+
+The Client Login page hands off to the original HTTPS Extek portal, without collecting credentials or simulating authentication. A local authenticated client area needs the actual authentication/backend integration. Job descriptions are identified as roles listed on the original company site; current availability requires confirmation. The original site's Blog link points to its homepage, so it now points to the local homepage rather than an invented blog.
+
+With `npm run dev` running, use `npm run test:site` for all-page desktop/mobile checks, link/image validation, catalogue filters, inquiry validation and prefills, job accordions and the portal handoff. `npm run test:production` checks HTTP responses for all 15 production HTML files and static assets. Existing `npm test` and `npm run test:about` verify navigation and interactions across five widths.
+
+The website remains a static Vercel deployment using `vercel.json`; no browser code is evaluated as a server function. Changes are local until committed, pushed and successfully redeployed.
+
 A complete local homepage in HTML, CSS and JavaScript. The workspace was empty, so no existing routes, backend or application files were changed.
 
 ## Run
@@ -11,6 +45,10 @@ npm run dev
 ```
 
 Open http://localhost:3000. Deployable static files are in `dist/`. The homepage can also be opened directly from `index.html`.
+
+The About page is at http://localhost:3000/about.html (or open `about.html` directly). Homepage navigation and company links now open this local page. It shares the header, footer, green/slate palette and browser interactions. Its company introduction, vision, mission, values and sustainability goal are adapted from https://extekprofiles.com/view/about with grammar cleaned up. No experience statistics or completed sustainability reductions are claimed.
+
+`npm run test:about` checks the new page at desktop, tablet and mobile widths, including local links, images, dropdowns, reduced motion and navigation from the homepage. Run the preview server first. The shared browser script registers the quote form handler only on pages that contain the form.
 
 ## Validation
 

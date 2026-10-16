@@ -34,6 +34,9 @@ const { once } = require('node:events');
     });
     for (const [route, mime, file] of [
       ['/', 'text/html', 'index.html'],
+      ['/about/', 'text/html', 'about/index.html'],
+      ['/about.html', 'text/html', 'about.html'],
+      ...fs.readdirSync('dist').filter(name => name.endsWith('.html') && !['index.html', 'about.html'].includes(name)).map(name => ['/' + name, 'text/html', name]),
       ['/favicon.ico', 'image/x-icon', 'favicon.ico'],
       ['/favicon.png', 'image/png', 'favicon.png'],
       ['/assets/homepage.js', 'text/javascript', 'assets/homepage.js'],
