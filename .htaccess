@@ -1,0 +1,10 @@
+Options -Indexes
+RewriteEngine On
+RewriteRule ^robots\.txt$ robots.php [L]
+RewriteRule ^sitemap\.xml$ sitemap.php [L]
+RewriteRule ^index\.html$ index.php [L]
+RewriteRule ^(about|apply-upload-resume|careers|contact|fabrication|industries|materials|partners-procurement|perforated-aluminium|products|profile-cutting|profile-design|quality|sales-marketing|upload-resume)\.html$ page.php?slug=$1 [L,QSA]
+RewriteRule ^login/?$ php-backend/login.php [L,QSA]
+RewriteRule ^admin/settings/?$ php-backend/cms-settings.php [L,QSA]
+RewriteRule ^admin/?$ php-backend/cms-admin.php [L,QSA]
+RewriteRule ^logout/?$ php-backend/logout.php [L,QSA]

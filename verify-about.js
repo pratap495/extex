@@ -48,8 +48,8 @@ const os = require('node:os');
     }
     await page.goto('http://localhost:3000');
     await page.locator('.menu-toggle').click();
-    await page.locator('.navigation a[href="/about/"]').click();
-    assert.ok(page.url().endsWith('/about/'));
+    await page.locator('.navigation a[href="about.html"]').click();
+    assert.ok(page.url().endsWith('/about.html'));
     await page.emulateMedia({ reducedMotion: 'reduce' });
     await page.reload();
     assert.equal(await page.locator('.reveal.ready').count(), 0);

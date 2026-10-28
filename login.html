@@ -1,0 +1,35 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Login | Extek Profiles</title>
+  <meta name="description" content="Sign in to Extek Profiles.">
+  <link rel="icon" href="/favicon.ico" sizes="any">
+  <link rel="stylesheet" href="/fonts.css">
+  <link rel="stylesheet" href="/styles.css">
+</head>
+<body class="login-route">
+  <main id="main" class="login-route-main">
+    <a class="login-route-logo" href="/" aria-label="Extek Profiles home"><img src="/assets/logo.webp" alt="Extek Profiles" width="215"></a>
+    <section class="login-route-card" aria-labelledby="login-title">
+      <p class="eyebrow"><span></span> EXTEK PROFILES</p>
+      <h1 id="login-title">Sign in</h1>
+      <form id="login-form">
+        <label for="login-username">Username</label>
+        <input id="login-username" name="username" autocomplete="username" required>
+        <label for="login-password">Password</label>
+        <input id="login-password" name="password" type="password" autocomplete="current-password" required>
+        <button class="button" type="submit">Sign in</button>
+        <p id="login-status" class="login-route-status" role="status" aria-live="polite">Authentication is not configured for this site yet.</p>
+      </form>
+    </section>
+  </main>
+  <script>
+    document.getElementById('login-form').addEventListener('submit', event => {
+      event.preventDefault();
+      document.getElementById('login-status').textContent = 'Authentication is not configured for this site yet.';
+    });
+  </script>
+</body>
+</html>

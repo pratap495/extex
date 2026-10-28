@@ -68,10 +68,7 @@ const os = require('node:os');
     await page.goto('http://localhost:3000/careers.html');
     await page.locator('.job-card summary').first().click();
     assert.equal(await page.locator('.job-card').first().getAttribute('open'), '');
-    await page.goto('http://localhost:3000/client-login.html');
-    assert.equal(await page.locator('input[type="password"]').count(), 0);
-    assert.equal(await page.locator('.portal-card > a.button').getAttribute('href'), 'https://extekprofiles.com/client-login.php');
     assert.deepEqual(errors, []);
-    console.log('Product filters, all inquiry forms, query prefills, job accordions and portal handoff passed.');
+    console.log('Product filters, all inquiry forms, query prefills and job accordions passed.');
   } finally { await browser.close(); }
 })().catch(error => { console.error(error); process.exitCode = 1; });

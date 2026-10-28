@@ -1,0 +1,8 @@
+<?php
+// Copy to config.local.php and enter the DB password there. This file is ignored by Git.
+return [
+    'DB_HOST' => 'auth-db1555.hstgr.io',
+    'DB_NAME' => 'u667941815_project',
+    'DB_USER' => 'u667941815_project',
+    'DB_PASS' => '',
+];

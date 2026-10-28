@@ -9,6 +9,7 @@
     "test:about": "node verify-about.js",
     "test:site": "node verify-site.js",
     "build": "node build.js",
+    "build:hostinger": "node build-hostinger.js",
     "dev": "node server.js"
   },
   "keywords": [],

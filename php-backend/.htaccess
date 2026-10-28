@@ -1,0 +1,5 @@
+Options -Indexes
+RewriteEngine On
+RewriteRule ^login/?$ login.php [L,QSA]
+RewriteRule ^admin/?$ admin.php [L,QSA]
+RewriteRule ^logout/?$ logout.php [L,QSA]

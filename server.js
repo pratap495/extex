@@ -4,7 +4,9 @@ const path = require('node:path');
 const root = path.resolve('dist');
 const types = { '.html': 'text/html; charset=utf-8', '.css': 'text/css', '.js': 'text/javascript', '.webp': 'image/webp', '.ttf': 'font/ttf', '.ico': 'image/x-icon', '.png': 'image/png' };
 const server = http.createServer((req, res) => {
-  const file = path.resolve(root, '.' + new URL(req.url, 'http://localhost').pathname.replace(/\/$/, '/index.html'));
+  let pathname = new URL(req.url, 'http://localhost').pathname;
+  if (!path.extname(pathname) && !pathname.endsWith('/')) pathname += '/';
+  const file = path.resolve(root, '.' + pathname.replace(/\/$/, '/index.html'));
   if (!file.startsWith(root + path.sep)) { res.writeHead(403); res.end(); return; }
   fs.readFile(file, (err, data) => {
     res.writeHead(err ? 404 : 200, { 'Content-Type': types[path.extname(file)] || 'application/octet-stream' });

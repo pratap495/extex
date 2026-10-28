@@ -63,14 +63,40 @@ if ('IntersectionObserver' in window && !matchMedia('(prefers-reduced-motion: re
   }), { threshold: 0.08 });
   document.querySelectorAll('.reveal').forEach(element => { element.classList.add('ready'); observer.observe(element); });
 }
+const ownerWhatsApp = (document.documentElement.dataset.ownerWhatsapp || '').replace(/\D/g, '');
+const contactEmail = document.documentElement.dataset.contactEmail || '';
+const prepareInquiryDraft = (form, subject, body, career = false) => {
+  const draft = form.querySelector('.email-draft') || document.querySelector('.email-draft');
+  if (!draft) return;
+  if (ownerWhatsApp) {
+    const whatsappUrl = `https://wa.me/${ownerWhatsApp}?text=${encodeURIComponent(`${subject}\n\n${body}`)}`;
+    draft.href = whatsappUrl;
+    draft.target = '_blank';
+    draft.rel = 'noopener noreferrer';
+    draft.textContent = 'Open WhatsApp message ↗';
+    draft.hidden = false;
+    window.open(whatsappUrl, '_blank', 'noopener');
+    const status = form.querySelector('.form-status') || document.querySelector('.form-status');
+    if (status) status.textContent = 'Your WhatsApp message is ready with the form details.' + (career ? ' Attach your CV in WhatsApp before sending.' : '');
+    return;
+  }
+  if (!contactEmail) {
+    const status = form.querySelector('.form-status') || document.querySelector('.form-status');
+    if (status) status.textContent = 'Please set an owner WhatsApp number or contact email in the site settings before accepting enquiries.';
+    return;
+  }
+  draft.href = `mailto:${contactEmail}?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`;
+  draft.removeAttribute('target');
+  draft.textContent = 'Open email draft ↗';
+  draft.hidden = false;
+  const status = form.querySelector('.form-status') || document.querySelector('.form-status');
+  if (status) status.textContent = 'Your email draft is ready. Open it below and send it from your email app. Nothing has been sent yet.' + (career ? ' Attach your CV before sending.' : '');
+};
 document.querySelector('#quote-form')?.addEventListener('submit', event => {
   event.preventDefault();
   const data = new FormData(event.currentTarget);
   const body = `Name: ${data.get('name')}\nEmail: ${data.get('email')}\nPhone: ${data.get('phone') || 'Not supplied'}\nProduct: ${data.get('product')}\n\n${data.get('message')}`;
-  const draft = document.querySelector('.email-draft');
-  draft.href = `mailto:info@extekprofiles.com?subject=${encodeURIComponent('Product inquiry: ' + data.get('product'))}&body=${encodeURIComponent(body)}`;
-  draft.hidden = false;
-  document.querySelector('.form-status').textContent = 'Your inquiry is ready. Open the email draft below, then send it from your email app. Nothing has been sent yet.';
+  prepareInquiryDraft(event.currentTarget, 'Product inquiry: ' + data.get('product'), body);
 });
 document.querySelector('#year').textContent = new Date().getFullYear();
 
@@ -95,10 +121,7 @@ document.querySelectorAll('form[data-inquiry]').forEach(form => {
         : value;
       return name[0].toUpperCase() + name.slice(1) + ': ' + readableValue;
     }).join('\n\n');
-    const draft = form.querySelector('.email-draft');
-    draft.href = `mailto:info@extekprofiles.com?subject=${encodeURIComponent(form.dataset.inquiry)}&body=${encodeURIComponent(body)}`;
-    draft.hidden = false;
-    form.querySelector('.form-status').textContent = 'Your email draft is ready. Open it below and send it from your email app. Nothing has been sent yet.' + (form.dataset.inquiry === 'Career application' ? ' Attach your CV before sending.' : '');
+    prepareInquiryDraft(form, form.dataset.inquiry, body, form.dataset.inquiry === 'Career application');
   });
 });
 const catalogueFilter = document.querySelector('[data-product-filter]');

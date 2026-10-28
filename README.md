@@ -20,7 +20,6 @@ The project now includes 15 local pages, all using the existing green/slate desi
 | Sales and marketing | `sales-marketing.html` |
 | Careers | `careers.html` |
 | Contact | `contact.html` |
-| Client portal handoff | `client-login.html` |
 
 `generate-pages.js` contains the remaining 13 pages' content and reusable layouts, and derives their header/footer from `index.html`. `npm run build` regenerates those pages before copying all 15 into `dist/`. Edit that generator for generated-page content changes; direct changes to those 13 HTML files will be overwritten at build time. Home and About remain hand-authored HTML.
 
@@ -28,11 +27,17 @@ Content is adapted from the corresponding company pages at https://extekprofiles
 
 Vendor, dealer, career and contact forms validate inputs and prepare an email draft addressed to `info@extekprofiles.com`; visitors must send it from their email application. Career applicants must attach their CV to the email themselves. Files are not uploaded and forms do not claim that a message has been sent. Product and job links prefill the relevant enquiry field.
 
-The Client Login page hands off to the original HTTPS Extek portal, without collecting credentials or simulating authentication. A local authenticated client area needs the actual authentication/backend integration. Job descriptions are identified as roles listed on the original company site; current availability requires confirmation. The original site's Blog link points to its homepage, so it now points to the local homepage rather than an invented blog.
+Job descriptions are identified as roles listed on the original company site; current availability requires confirmation. The original site's Blog link points to its homepage, so it now points to the local homepage rather than an invented blog.
 
 With `npm run dev` running, use `npm run test:site` for all-page desktop/mobile checks, link/image validation, catalogue filters, inquiry validation and prefills, job accordions and the portal handoff. `npm run test:production` checks HTTP responses for all 15 production HTML files and static assets. Existing `npm test` and `npm run test:about` verify navigation and interactions across five widths.
 
 The website remains a static Vercel deployment using `vercel.json`; no browser code is evaluated as a server function. Changes are local until committed, pushed and successfully redeployed.
+
+## PHP admin login on Hostinger
+
+The `/login` PHP route, `/admin` role-gated page, and `/logout` endpoint are in `php-backend/`. Build an Apache/PHP upload bundle with `npm run build:hostinger`; upload the contents of `hostinger-dist/` to Hostinger `public_html`. The regular `npm run build` remains a static Vercel build and does not include the PHP backend, because Vercel's current deployment config serves static files only.
+
+The database name and user default to the supplied `u667941815_project`. Configure `DB_HOST` and `DB_PASS` as server environment values. Hostinger databases normally use `localhost` for PHP hosted on the same account; use the remote hostname and allowlist only when PHP is hosted elsewhere. Run `private/schema.sql` in phpMyAdmin, then provision the admin from PHP CLI with `ADMIN_USERNAME=admin` and `ADMIN_PASSWORD` set in the environment before running `php create-admin.php`. The password is stored as a PHP password hash. Do not put it in source, `.htaccess`, or a web-accessible config file. Login is not functional until PHP is deployed and the database values are configured.
 
 A complete local homepage in HTML, CSS and JavaScript. The workspace was empty, so no existing routes, backend or application files were changed.
 
@@ -103,3 +108,11 @@ git push origin main
 ```
 
 In Vercel, the project root must be this repository folder. The checked-in config sets Framework Preset to Other, Build Command to `npm run build`, and Output Directory to `dist`. Redeploy the new commit if automatic Git deployments are disabled. Remove any separate dashboard routing override that sends static requests to an old function, if one exists.
+
+## Local XAMPP development
+
+This project is served directly from `C:\xampp\htdocs\extremee` at `http://localhost/extremee/`. Start Apache in the XAMPP Control Panel; PHP connects from XAMPP to the remote Hostinger database. The ignored `php-backend/private/config.local.php` holds local connection settings. Copy the example if needed and enter the database password there; the example contains no password.
+
+The unlinked `/extremee/login` route is handled by PHP using `.htaccess`; `/extremee/admin` requires the admin role. Run `php-backend/create-admin.ps1` from PowerShell to enter an admin password through a masked prompt. Only a password hash is saved in MySQL.
+
+The CMS stores every public page, image, page setting, site setting, and footer social link in MySQL. Run `C:\xampp\php\php.exe php-backend\cms-install.php` to create or update the CMS tables and import referenced images; rerunning it preserves page edits and configured settings. Sign in at `http://localhost/extremee/login`, then open `http://localhost/extremee/admin` for page editing or `http://localhost/extremee/admin/settings` for site URL, contact, map, ordering, WhatsApp, robots.txt, and footer social settings. Public pages apply the saved settings; `/robots.txt` and `/sitemap.xml` are generated from the database. PHP CMS features run on XAMPP; Vercel remains a static build.
