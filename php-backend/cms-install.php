@@ -81,6 +81,17 @@ $pdo->exec("CREATE TABLE IF NOT EXISTS cms_social_links (
     created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
     updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci");
+$pdo->exec("CREATE TABLE IF NOT EXISTS cms_content_items (
+    id BIGINT UNSIGNED NOT NULL AUTO_INCREMENT PRIMARY KEY,
+    section VARCHAR(20) NOT NULL,
+    title VARCHAR(300) NOT NULL,
+    description TEXT NOT NULL,
+    image_key VARCHAR(190) NOT NULL DEFAULT '',
+    alt_text VARCHAR(255) NOT NULL DEFAULT '',
+    sort_order INT NOT NULL DEFAULT 0,
+    created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    INDEX section_order (section, sort_order, id)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci");
 
 $defaultSiteSettings = [
     'site_base_url' => 'https://extekprofiles.com',
@@ -88,6 +99,7 @@ $defaultSiteSettings = [
     'order_button_url' => 'contact.html',
     'contact_phone' => '+91 96769 10662',
     'contact_email' => 'info@extekprofiles.com',
+    'submission_email' => 'etakarlapallipratap@gmail.com',
     'contact_address' => 'Survey No. 21, Mahadevpur Village, Bibinagar - 508126, Yadadri Bhuvanagiri District, Telangana, India.',
     'contact_map_embed_url' => 'https://www.google.com/maps?output=embed&q=Survey+No.+21,+Mahadevpur+Village,+Bibinagar,+Telangana+508126,+India',
     'owner_whatsapp_number' => '',

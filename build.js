@@ -5,7 +5,7 @@ fs.mkdirSync('dist/assets', { recursive: true });
 for (const name of fs.readdirSync('dist')) {
   if (name.endsWith('.html')) fs.rmSync(path.join('dist', name), { force: true });
 }
-const pages = ['index.html', 'about.html', ...require('./generate-pages.js')];
+const pages = ['index.html', 'about.html', 'blogs.html', 'gallery.html', 'aluminium-profile-selection.html', 'aluminium-extrusion-explained.html', 'custom-aluminium-profile-design.html', 'aluminium-profile-cutting-guide.html', ...require('./generate-pages.js')];
 for (const name of [...pages, 'styles.css', 'fonts.css']) fs.copyFileSync(name, path.join('dist', name));
 // Keep a clean, dedicated About route as well as the direct about.html file.
 // This prevents an About navigation from resolving to the homepage on static hosts.

@@ -11,9 +11,20 @@ if (!target.startsWith(workspace + path.sep) || path.basename(target) !== 'hosti
 fs.rmSync(target, { recursive: true, force: true });
 fs.cpSync(path.resolve('dist'), target, { recursive: true });
 const backend = path.resolve('php-backend');
-for (const name of ['login.php', 'admin.php', 'logout.php', 'create-admin.php']) {
-  fs.copyFileSync(path.join(backend, name), path.join(target, name));
+for (const name of ['index.php', 'page.php', 'media.php', 'styles.php', 'robots.php', 'sitemap.php', '.htaccess']) {
+  fs.copyFileSync(path.resolve(name), path.join(target, name));
 }
-fs.copyFileSync(path.join(backend, '.htaccess'), path.join(target, '.htaccess'));
-fs.cpSync(path.join(backend, 'private'), path.join(target, 'private'), { recursive: true });
-console.log('Added the PHP admin login backend to dist/ for Apache/PHP hosting.');
+
+const backendTarget = path.join(target, 'php-backend');
+fs.mkdirSync(backendTarget, { recursive: true });
+for (const name of ['login.php', 'cms-admin.php', 'cms-settings.php', 'logout.php', 'create-admin.php', 'cms-install.php', 'schema.sql', '.htaccess']) {
+  fs.copyFileSync(path.join(backend, name), path.join(backendTarget, name));
+}
+
+// Copy only runtime PHP files. Never include config.local.php or local DB credentials.
+const privateTarget = path.join(backendTarget, 'private');
+fs.mkdirSync(privateTarget, { recursive: true });
+for (const name of ['config.php', 'database.php', 'auth.php', 'cms.php', '.htaccess']) {
+  fs.copyFileSync(path.join(backend, 'private', name), path.join(privateTarget, name));
+}
+console.log('Packaged the PHP CMS, media endpoint, and rewrite rules for Apache hosting (without local secrets).');

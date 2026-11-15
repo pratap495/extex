@@ -7,13 +7,78 @@ require_once __DIR__ . '/private/cms.php';
 require_admin();
 
 $pdo = database();
+$pdo->exec("CREATE TABLE IF NOT EXISTS cms_content_items (
+    id BIGINT UNSIGNED NOT NULL AUTO_INCREMENT PRIMARY KEY,
+    section VARCHAR(20) NOT NULL,
+    title VARCHAR(300) NOT NULL,
+    description TEXT NOT NULL,
+    image_key VARCHAR(190) NOT NULL DEFAULT '',
+    alt_text VARCHAR(255) NOT NULL DEFAULT '',
+    sort_order INT NOT NULL DEFAULT 0,
+    created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    INDEX section_order (section, sort_order, id)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci");
+$contentColumns = array_column($pdo->query('SHOW COLUMNS FROM cms_content_items')->fetchAll(), 'Field');
+if (!in_array('article_slug', $contentColumns, true)) $pdo->exec("ALTER TABLE cms_content_items ADD COLUMN article_slug VARCHAR(180) NOT NULL DEFAULT ''");
+if (!in_array('article_body', $contentColumns, true)) $pdo->exec("ALTER TABLE cms_content_items ADD COLUMN article_body MEDIUMTEXT NOT NULL");
+$pageSlug = preg_replace('/[^a-z0-9-]/', '', strtolower((string)($_GET['page'] ?? $_POST['page'] ?? 'home')));
 $error = '';
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     if (!csrf_is_valid($_POST['csrf_token'] ?? null)) {
         $error = 'Your session expired. Reload and try again.';
     } else {
         $action = (string)($_POST['action'] ?? '');
-        if ($action === 'save_homepage') {
+        if ($action === 'add_content_item') {
+            $section = (string)($_POST['section'] ?? '');
+            $title = mb_substr(trim((string)($_POST['title'] ?? '')), 0, 300);
+            $description = trim((string)($_POST['description'] ?? ''));
+            $imageKey = trim((string)($_POST['image_key'] ?? ''));
+            $alt = mb_substr(trim((string)($_POST['alt_text'] ?? '')), 0, 255);
+            $articleSlug = strtolower(trim((string)($_POST['article_slug'] ?? '')));
+            $articleSlug = trim((string)preg_replace('/[^a-z0-9-]+/', '-', $articleSlug), '-');
+            $articleBody = trim((string)($_POST['article_body'] ?? ''));
+            $imageExists = true;
+            if ($section === 'gallery') {
+                $imageCheck = $pdo->prepare('SELECT 1 FROM cms_media WHERE media_key=:key');
+                $imageCheck->execute(['key'=>$imageKey]);
+                $imageExists = (bool)$imageCheck->fetchColumn();
+            }
+            if (!in_array($section, ['blogs', 'gallery'], true) || $title === '' || strlen($description) > 10000 || !$imageExists || ($section === 'blogs' && ($pageSlug !== 'blogs' || $articleSlug === '' || $articleBody === '' || strlen($articleBody) > 100000)) || ($section === 'gallery' && $pageSlug !== 'gallery')) {
+                $error = 'Choose a title and valid content for this page.';
+            } else {
+                if ($section === 'blogs') {
+                    $exists = $pdo->prepare('SELECT 1 FROM cms_content_items WHERE section="blogs" AND article_slug=:slug'); $exists->execute(['slug'=>$articleSlug]);
+                    if ($exists->fetchColumn()) { $error = 'That article URL is already in use. Choose a different slug.'; }
+                }
+                if ($error === '') {
+                $insert = $pdo->prepare('INSERT INTO cms_content_items (section,title,description,image_key,alt_text,sort_order,article_slug,article_body) VALUES (:section,:title,:description,:image_key,:alt_text,:sort_order,:article_slug,:article_body)');
+                $insert->execute(['section'=>$section,'title'=>$title,'description'=>$description,'image_key'=>$imageKey,'alt_text'=>$alt,'sort_order'=>(int)$pdo->query("SELECT COALESCE(MAX(sort_order),0)+1 FROM cms_content_items WHERE section=" . $pdo->quote($section))->fetchColumn(),'article_slug'=>$section === 'blogs' ? $articleSlug : '', 'article_body'=>$section === 'blogs' ? $articleBody : '']);
+                header('Location: ' . app_url('/admin?page=' . $section . '&item_added=1'), true, 303); exit;
+                }
+            }
+        } elseif ($action === 'update_content_item') {
+            $section = (string)($_POST['section'] ?? '');
+            $id = (int)($_POST['id'] ?? 0);
+            $title = mb_substr(trim((string)($_POST['title'] ?? '')), 0, 300);
+            $description = trim((string)($_POST['description'] ?? ''));
+            $imageKey = trim((string)($_POST['image_key'] ?? ''));
+            $alt = mb_substr(trim((string)($_POST['alt_text'] ?? '')), 0, 255);
+            $articleSlug = trim((string)preg_replace('/[^a-z0-9-]+/', '-', strtolower((string)($_POST['article_slug'] ?? ''))), '-');
+            $articleBody = trim((string)($_POST['article_body'] ?? ''));
+            if (in_array($section, ['blogs','gallery'], true) && $pageSlug === $section && $title !== '') {
+                $update = $pdo->prepare('UPDATE cms_content_items SET title=:title,description=:description,image_key=:image_key,alt_text=:alt_text,article_slug=:article_slug,article_body=:article_body WHERE id=:id AND section=:section');
+                $update->execute(['title'=>$title,'description'=>$description,'image_key'=>$imageKey,'alt_text'=>$alt,'article_slug'=>$section==='blogs'?$articleSlug:'','article_body'=>$section==='blogs'?$articleBody:'','id'=>$id,'section'=>$section]);
+                header('Location: ' . app_url('/admin?page=' . $section . '&item_updated=1'), true, 303); exit;
+            }
+            $error = 'Check the item details and try again.';
+        } elseif ($action === 'delete_content_item') {
+            $section = (string)($_POST['section'] ?? '');
+            if (in_array($section, ['blogs','gallery'], true) && $pageSlug === $section) {
+                $delete = $pdo->prepare('DELETE FROM cms_content_items WHERE id=:id AND section=:section');
+                $delete->execute(['id'=>(int)($_POST['id'] ?? 0),'section'=>$section]);
+                header('Location: ' . app_url('/admin?page=' . $section . '&item_deleted=1'), true, 303); exit;
+            }
+        } elseif ($action === 'save_homepage') {
             $html = (string)($_POST['document_html'] ?? '');
             $slug = preg_replace('/[^a-z0-9-]/', '', strtolower((string)($_POST['slug'] ?? 'home')));
             if (!$slug || !cms_page($pdo, $slug)) {
@@ -88,6 +153,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                     $update = $pdo->prepare('UPDATE cms_pages SET document_html = :html, page_name = :page_name, banner_title = :banner_title, banner_image_key = :banner_image_key, banner_image_alt = :banner_image_alt, meta_title = :meta_title, meta_description = :meta_description, meta_keywords = :meta_keywords, meta_tags = :meta_tags, canonical_url = :canonical_url, banner_heading_tag = :banner_heading_tag, service_list_heading_tag = :service_list_heading_tag, sort_order = :sort_order, template_name = :template_name, is_active = :is_active, show_in_nav = :show_in_nav, backlinks = :backlinks WHERE slug = :slug');
                     try {
                         $update->execute($fields + ['html' => $html, 'slug' => $slug]);
+                        cms_sync_navigation($pdo, $html);
                         if ($update->rowCount() === 0 && !cms_page($pdo, $slug)) {
                             throw new RuntimeException('The page could not be found while saving.');
                         }
@@ -130,8 +196,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     }
 }
 
+$pageSlug = preg_replace('/[^a-z0-9-]/', '', strtolower((string)($_GET['page'] ?? $_POST['page'] ?? 'home')));
 $pages = cms_pages($pdo);
-$pageSlug = preg_replace('/[^a-z0-9-]/', '', strtolower((string)($_GET['page'] ?? 'home')));
 $page = cms_page($pdo, $pageSlug ?: 'home');
 if (!$page) {
     http_response_code(503);
@@ -142,9 +208,11 @@ $siteSettings = cms_site_settings($pdo);
 $socialLinks = cms_social_links($pdo);
 $previewSettings = $page;
 $previewSettings['is_active'] = 1;
-$preview = cms_render_html((string)$page['document_html'], $previewSettings, $pages, $siteSettings, $socialLinks);
+$preview = cms_render_html((string)$page['document_html'], $previewSettings, $pages, $siteSettings, $socialLinks, $pdo);
 $token = csrf_token();
-$message = isset($_GET['saved']) ? 'Page saved.' : (isset($_GET['uploaded']) ? 'Image stored in the database.' : '');
+$message = isset($_GET['saved']) ? 'Page saved.' : (isset($_GET['uploaded']) ? 'Image stored in the database.' : (isset($_GET['item_added']) ? 'New item added.' : (isset($_GET['item_updated']) ? 'Item updated.' : (isset($_GET['item_deleted']) ? 'Item deleted.' : ''))));
+$contentItems = in_array($page['slug'], ['blogs','gallery'], true) ? $pdo->prepare('SELECT * FROM cms_content_items WHERE section=:section ORDER BY sort_order,id') : null;
+if ($contentItems) { $contentItems->execute(['section'=>$page['slug']]); $contentItems=$contentItems->fetchAll(); } else $contentItems=[];
 $metaDoc = new DOMDocument();
 $previousLibxmlSetting = libxml_use_internal_errors(true);
 @$metaDoc->loadHTML((string)$page['document_html']);
@@ -189,16 +257,18 @@ libxml_use_internal_errors($previousLibxmlSetting);
 <head>
   <meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
   <title>Site CMS | Extek Profiles</title>
+  <link rel="icon" type="image/x-icon" href="<?= h(app_url('/assets/favicon.ico')) ?>">
   <link rel="stylesheet" href="<?= h(app_url('/fonts.css')) ?>"><link rel="stylesheet" href="<?= h(app_url('/styles.css')) ?>">
   <style>
     .cms-image-editor{display:flex;align-items:end;gap:12px;flex-wrap:wrap;margin:10px 0 16px}.cms-image-editor[hidden]{display:none!important}.cms-image-editor label{display:grid;gap:6px;font-weight:600}.cms-image-editor input{padding:10px;border:1px solid #d9e1d4;border-radius:7px;min-width:min(420px,80vw)}.cms-settings{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:16px}.cms-settings h3{grid-column:1/-1;margin:12px 0 0}.cms-settings label{display:grid;gap:6px;font-weight:600}.cms-settings input,.cms-settings select,.cms-settings textarea{width:100%;padding:10px;border:1px solid #d9e1d4;border-radius:7px;font:inherit}.cms-settings textarea{min-height:100px;resize:vertical}.cms-check{display:flex!important;align-items:center;gap:9px!important}.cms-check input{width:auto}.cms-wide{grid-column:1/-1}@media(max-width:700px){.cms-settings{grid-template-columns:1fr}.cms-wide,.cms-settings h3{grid-column:auto}}
     .cms-format-toolbar{display:flex;align-items:end;gap:8px;flex-wrap:wrap;padding:12px;border:1px solid #e5e9e1;border-radius:10px;margin:12px 0}.cms-format-toolbar label{display:grid;gap:5px;font-weight:600}.cms-format-toolbar select,.cms-format-toolbar button{padding:8px 11px;border:1px solid #d9e1d4;border-radius:7px;background:#fff;cursor:pointer}.cms-format-toolbar button:hover{background:#f3f7ef}
+    .cms-item-remove{border:1px solid #b42318!important;border-radius:7px;background:#fff!important;color:#b42318;padding:9px 12px;font-weight:700;cursor:pointer}.cms-item-remove:hover{background:#fff1f0!important}
     .cms-page{min-height:100vh;background:#f3f7ef;padding:34px 0 80px}.cms-wrap{width:min(1500px,calc(100% - 40px));margin:auto}.cms-head{display:flex;justify-content:space-between;align-items:center;gap:20px;margin-bottom:25px}.cms-head p{margin-top:8px}.cms-actions{display:flex;gap:12px;align-items:center}.cms-card{background:#fff;border:1px solid #e5e9e1;border-radius:16px;padding:24px;margin-bottom:22px}.cms-toolbar{display:flex;justify-content:space-between;align-items:center;gap:16px;margin-bottom:16px}.cms-editor-frame{display:block;width:100%;height:70vh;border:1px solid #d9e1d4;border-radius:10px;background:white}.cms-notice{padding:12px 16px;border-radius:8px;background:#e5f2dc;margin-bottom:18px}.cms-error{background:#fde8e7;color:#842c26}.cms-upload{display:flex;align-items:end;gap:14px;flex-wrap:wrap}.cms-upload label,.cms-page-fields label{display:grid;gap:6px;font-weight:600}.cms-upload input,.cms-page-fields input{padding:10px;border:1px solid #d9e1d4;border-radius:7px}.cms-page-fields{display:grid;grid-template-columns:1fr 2fr;gap:14px;margin-bottom:18px}.cms-page-fields[hidden]{display:none}.cms-page-fields input{width:100%}.cms-section-list{display:grid;gap:9px;margin-top:16px}.cms-section-row{display:flex;align-items:center;justify-content:space-between;gap:12px;border:1px solid #e5e9e1;border-radius:10px;padding:12px 14px}.cms-section-row span{font-weight:600}.cms-section-row[aria-hidden="true"]{opacity:.55}.cms-section-row button{border:1px solid #d9e1d4;border-radius:7px;background:#fff;padding:7px 10px;cursor:pointer}.cms-section-actions{display:flex;gap:6px;flex-wrap:wrap}.cms-media-list{display:grid;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:14px;margin-top:20px}.cms-media-item{border:1px solid #e5e9e1;border-radius:12px;padding:12px;min-width:0}.cms-media-item img{width:100%;height:130px;object-fit:cover;border-radius:8px;background:#f3f7ef}.cms-media-item strong{display:block;margin-top:8px;overflow-wrap:anywhere}.cms-media-item small{display:block;color:#757f8b;margin:4px 0 10px;overflow-wrap:anywhere}.cms-note{margin-top:12px;font-size:14px}.cms-help{max-width:950px}.cms-help li{margin:6px 0;color:#59666e}@media(max-width:700px){.cms-head,.cms-toolbar{align-items:flex-start;flex-direction:column}.cms-editor-frame{height:65vh;min-height:520px}.cms-section-row{align-items:flex-start;flex-direction:column}.cms-card{padding:16px}.cms-wrap{width:calc(100% - 24px)}.cms-page-fields{grid-template-columns:1fr}}
   </style>
 </head>
 <body class="cms-page">
 <main class="cms-wrap">
-  <header class="cms-head"><div><p class="eyebrow"><span></span> EXTEK PROFILES CMS</p><h1>Website editor</h1><p>Update page details, search settings, banner, and visibility. Changes are saved in the website database.</p><form method="get" action="<?= h(app_url('/admin')) ?>"><label for="page-select">Choose a page</label> <select id="page-select" name="page" onchange="this.form.submit()"><?php foreach ($pages as $available): $label = $available['page_name'] ?: ucwords(str_replace('-', ' ', $available['slug'])); ?><option value="<?= h($available['slug']) ?>" <?= $available['slug'] === $page['slug'] ? 'selected' : '' ?>><?= h($label) ?></option><?php endforeach; ?></select></form></div><div class="cms-actions"><a class="button outline" href="<?= h(app_url('/admin/settings')) ?>">SEO &amp; Settings</a><a class="button outline" href="<?= h($page['slug'] === 'home' ? app_url('/') : app_url('/' . $page['slug'] . '.html')) ?>" target="_blank" rel="noopener">View page</a><form method="post" action="<?= h(app_url('/logout')) ?>"><input type="hidden" name="csrf_token" value="<?= h($token) ?>"><button class="button" type="submit">Sign out</button></form></div></header>
+  <header class="cms-head"><div><p class="eyebrow"><span></span> EXTEK PROFILES CMS</p><h1>Website editor</h1><p>Update page details, search settings, banner, and visibility. Changes are saved in the website database.</p><form method="get" action="<?= h(app_url('/admin')) ?>"><label for="page-select">Choose a page</label> <select id="page-select" name="page" onchange="this.form.submit()"><?php foreach ($pages as $available): $label = $available['page_name'] ?: ucwords(str_replace('-', ' ', $available['slug'])); ?><option value="<?= h($available['slug']) ?>" <?= $available['slug'] === $page['slug'] ? 'selected' : '' ?>><?= h($label) ?></option><?php endforeach; ?></select></form></div><div class="cms-actions"><a class="button outline" href="<?= h(app_url('/admin/settings')) ?>">SEO &amp; Settings</a><a class="button outline" href="<?= h($page['slug'] === 'home' ? app_url('/index') : app_url('/' . $page['slug'])) ?>" target="_blank" rel="noopener">View page</a><form method="post" action="<?= h(app_url('/logout')) ?>"><input type="hidden" name="csrf_token" value="<?= h($token) ?>"><button class="button" type="submit">Sign out</button></form></div></header>
   <?php if ($message !== ''): ?><p class="cms-notice" role="status"><?= h($message) ?></p><?php endif; ?>
   <?php if ($error !== ''): ?><p class="cms-notice cms-error" role="alert"><?= h($error) ?></p><?php endif; ?>
   <form class="cms-card" id="homepage-form" method="post" enctype="multipart/form-data" action="<?= h(app_url('/admin')) ?>">
@@ -227,7 +297,7 @@ libxml_use_internal_errors($previousLibxmlSetting);
       <label class="cms-check"><input type="checkbox" name="show_in_nav" value="1" <?= (int)($page['show_in_nav'] ?? 1) ? 'checked' : '' ?>> Show in Nav</label>
       <label class="cms-wide">Backlinks (one per line)<textarea name="backlinks" maxlength="4000" placeholder="https://example.com/page"><?= h((string)($page['backlinks'] ?? '')) ?></textarea></label>
     </section>
-    <div class="cms-toolbar"><div><h2><?= h(ucwords(str_replace('-', ' ', $page['slug']))) ?> page</h2><p class="cms-note">Click any text in the preview to edit it. Click an image to select it, then choose a replacement below.</p></div><strong>Visual editor</strong></div>
+    <div class="cms-toolbar"><div><h2><?= h(ucwords(str_replace('-', ' ', $page['slug']))) ?> page</h2><p class="cms-note">Click any text in the preview to edit it. The shared menu is editable here too; saving menu changes updates it across all CMS pages. Click an image to select it, then choose a replacement below.</p></div><strong>Visual editor</strong></div>
     <div class="cms-format-toolbar" aria-label="Text formatting tools">
       <label>Change selected text to<select id="cms-format-choice"><option value="p">Paragraph</option><option value="h2">Heading 2</option><option value="h3">Heading 3</option><option value="h4">Heading 4</option><option value="h5">Heading 5</option><option value="h6">Heading 6</option></select></label>
       <button id="cms-format-apply" type="button">Apply style</button><button id="cms-format-bold" type="button"><strong>Bold</strong></button><button id="cms-format-italic" type="button"><em>Italic</em></button><button id="cms-format-list" type="button">Bulleted list</button><button id="cms-add-link" type="button">Link selected words</button>
@@ -236,10 +306,18 @@ libxml_use_internal_errors($previousLibxmlSetting);
     <iframe id="homepage-preview" class="cms-editor-frame" title="Editable page preview" sandbox="allow-same-origin" srcdoc="<?= h($preview) ?>"></iframe>
     <p class="cms-note" id="cms-image-status" role="status" aria-live="polite">Click text to edit it or select an image.</p>
     <div id="cms-link-editor" class="cms-page-fields" hidden><label>Link text<input id="cms-link-text" maxlength="300"></label><label>Link destination<input id="cms-link-url" maxlength="500" placeholder="Page, website, email, or phone"></label><button class="button" id="cms-link-save" type="button">Update link</button></div>
-    <div id="cms-image-editor" class="cms-image-editor" hidden><label>Image description<input id="cms-image-alt" maxlength="255" placeholder="Describe this image"></label><button class="button" id="cms-image-alt-save" type="button">Update description</button></div>
+    <div id="cms-image-editor" class="cms-image-editor" hidden><label>Image description<input id="cms-image-alt" maxlength="255" placeholder="Describe this image"></label><button class="button" id="cms-image-alt-save" type="button">Update description</button><button class="cms-item-remove" id="cms-image-remove" type="button">Remove image from page</button></div>
     <textarea id="homepage-content" name="document_html" hidden><?= h((string)$page['document_html']) ?></textarea>
     <button class="button" type="submit">Save page to database</button>
   </form>
+  <?php if (in_array($page['slug'], ['blogs','gallery'], true)): ?>
+  <section class="cms-card"><h2><?= $page['slug'] === 'blogs' ? 'Blog posts' : 'Gallery items' ?></h2><p class="cms-note">Add a new item and it will appear on the public page.</p>
+    <form class="cms-upload" method="post" action="<?= h(app_url('/admin')) ?>"><input type="hidden" name="csrf_token" value="<?= h($token) ?>"><input type="hidden" name="action" value="add_content_item"><input type="hidden" name="section" value="<?= h($page['slug']) ?>"><input type="hidden" name="page" value="<?= h($page['slug']) ?>"><label>Title<input name="title" maxlength="300" required></label><label>Card description<textarea name="description" maxlength="10000" required></textarea></label>
+      <?php if ($page['slug'] === 'blogs'): ?><label>Article URL slug<input name="article_slug" maxlength="180" placeholder="my-new-article" required></label><label>Full article text<textarea name="article_body" maxlength="100000" rows="10" required></textarea></label><?php endif; ?>
+      <label>Image<select name="image_key" <?= $page['slug'] === 'gallery' ? 'required' : '' ?>><option value="">No image</option><?php foreach ($media as $image): ?><option value="<?= h($image['media_key']) ?>"><?= h($image['file_name']) ?></option><?php endforeach; ?></select></label><label>Image alt text<input name="alt_text" maxlength="255"></label><button class="button" type="submit">Add item</button></form>
+    <?php if (!$contentItems): ?><p class="cms-note">No added items yet.</p><?php endif; ?>
+    <?php foreach ($contentItems as $item): ?><article class="cms-card"><h3>Manage: <?= h($item['title']) ?></h3><form class="cms-upload" method="post" action="<?= h(app_url('/admin')) ?>"><input type="hidden" name="csrf_token" value="<?= h($token) ?>"><input type="hidden" name="action" value="update_content_item"><input type="hidden" name="section" value="<?= h($page['slug']) ?>"><input type="hidden" name="page" value="<?= h($page['slug']) ?>"><input type="hidden" name="id" value="<?= (int)$item['id'] ?>"><label>Title<input name="title" maxlength="300" required value="<?= h((string)$item['title']) ?>"></label><label>Card description<textarea name="description" maxlength="10000" required><?= h((string)$item['description']) ?></textarea></label><?php if ($page['slug']==='blogs'): ?><label>Article URL slug<input name="article_slug" maxlength="180" required value="<?= h((string)$item['article_slug']) ?>"></label><label>Full article text<textarea name="article_body" maxlength="100000" rows="10" required><?= h((string)$item['article_body']) ?></textarea></label><?php endif; ?><label>Image<select name="image_key"><option value="">No image</option><?php foreach ($media as $image): ?><option value="<?= h($image['media_key']) ?>" <?= $image['media_key']===$item['image_key']?'selected':'' ?>><?= h($image['file_name']) ?></option><?php endforeach; ?></select></label><label>Image alt text<input name="alt_text" maxlength="255" value="<?= h((string)$item['alt_text']) ?>"></label><button class="button" type="submit">Save item</button></form><form method="post" action="<?= h(app_url('/admin')) ?>" onsubmit="return confirm('Remove this item from the public <?= h($page['slug']) ?> page?')"><input type="hidden" name="csrf_token" value="<?= h($token) ?>"><input type="hidden" name="action" value="delete_content_item"><input type="hidden" name="section" value="<?= h($page['slug']) ?>"><input type="hidden" name="page" value="<?= h($page['slug']) ?>"><input type="hidden" name="id" value="<?= (int)$item['id'] ?>"><button class="cms-item-remove" type="submit">Remove item</button></form></article><?php endforeach; ?>
+  </section><?php endif; ?>
   <section class="cms-card" aria-labelledby="sections-title"><div class="cms-toolbar"><div><h2 id="sections-title">Page sections</h2><p class="cms-note">Show, hide, move, duplicate, or remove sections. Save the page to publish changes.</p></div><button class="button" id="cms-add-section" type="button">Add a section</button></div><div id="cms-section-list" class="cms-section-list"></div></section>
   <section class="cms-card" aria-labelledby="media-title"><h2 id="media-title">Image library <small>(<?= count($media) ?> stored in MySQL)</small></h2><p class="cms-note">Upload images here, then select a page image and choose a replacement.</p>
     <form class="cms-upload" method="post" enctype="multipart/form-data" action="<?= h(app_url('/admin')) ?>"><input type="hidden" name="csrf_token" value="<?= h($token) ?>"><input type="hidden" name="action" value="upload_image"><input type="hidden" name="page" value="<?= h($page['slug']) ?>"><label>Image file<input type="file" name="image" accept="image/webp,image/png,image/jpeg,image/gif" required></label><label>Alt text<input type="text" name="alt_text" maxlength="255" placeholder="Describe the image"></label><button class="button" type="submit">Upload image</button></form>
@@ -449,6 +527,19 @@ libxml_use_internal_errors($previousLibxmlSetting);
       bannerImageSelect.value = mediaKey;
     }
     imageStatus.textContent = 'Image description updated. Save the page to keep the change.';
+  });
+  document.getElementById('cms-image-remove').addEventListener('click', () => {
+    if (!selectedImage || !confirm('Remove this image from the page? Save the page to publish the change.')) return;
+    const wasBanner = selectedImage === frame.contentDocument.querySelector('main img');
+    selectedImage.remove();
+    selectedImage = null;
+    imagePanel.hidden = true;
+    if (wasBanner) {
+      document.getElementById('banner-image-key').value = '';
+      document.getElementById('banner-image-alt').value = '';
+    }
+    refreshSections();
+    imageStatus.textContent = 'Image removed. Save the page to publish the change.';
   });
   document.getElementById('cms-add-section').addEventListener('click', () => {
     const section = frame.contentDocument.createElement('section');

@@ -22,7 +22,7 @@ try {
         exit('Page not found.');
     }
     header('Content-Type: text/html; charset=utf-8');
-    echo cms_render_html((string)$page['document_html'], $page, cms_pages($pdo), cms_site_settings($pdo), cms_social_links($pdo));
+    echo cms_render_html((string)$page['document_html'], $page, cms_pages($pdo), cms_site_settings($pdo), cms_social_links($pdo), $pdo);
 } catch (Throwable $exception) {
     error_log('CMS page failed: ' . $exception->getMessage());
     http_response_code(503);

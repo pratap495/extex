@@ -16,10 +16,11 @@ const iconPaths = {
 document.querySelectorAll('[data-icon]').forEach(element => {
   element.innerHTML = `<svg viewBox="0 0 26 26" aria-hidden="true">${iconPaths[element.dataset.icon]}</svg>`;
 });
-function closeMenus() {
+function closeMenus(keep = []) {
   document.querySelectorAll('.dropdown.open').forEach(item => {
+    if (keep.includes(item)) return;
     item.classList.remove('open');
-    item.querySelector('button').setAttribute('aria-expanded', 'false');
+    item.querySelector(':scope > button')?.setAttribute('aria-expanded', 'false');
   });
 }
 menuToggle.addEventListener('click', () => {
@@ -29,9 +30,13 @@ menuToggle.addEventListener('click', () => {
 });
 document.querySelectorAll('.dropdown > button').forEach(button => {
   button.addEventListener('click', () => {
-    const open = !button.parentElement.classList.contains('open');
-    closeMenus();
-    button.parentElement.classList.toggle('open', open);
+    const dropdown = button.parentElement;
+    const open = !dropdown.classList.contains('open');
+    const ancestors = [];
+    let parent = dropdown.parentElement.closest('.dropdown');
+    while (parent) { ancestors.push(parent); parent = parent.parentElement.closest('.dropdown'); }
+    closeMenus(ancestors);
+    dropdown.classList.toggle('open', open);
     button.setAttribute('aria-expanded', String(open));
   });
 });
@@ -92,12 +97,29 @@ const prepareInquiryDraft = (form, subject, body, career = false) => {
   const status = form.querySelector('.form-status') || document.querySelector('.form-status');
   if (status) status.textContent = 'Your email draft is ready. Open it below and send it from your email app. Nothing has been sent yet.' + (career ? ' Attach your CV before sending.' : '');
 };
-document.querySelector('#quote-form')?.addEventListener('submit', event => {
-  event.preventDefault();
-  const data = new FormData(event.currentTarget);
-  const body = `Name: ${data.get('name')}\nEmail: ${data.get('email')}\nPhone: ${data.get('phone') || 'Not supplied'}\nProduct: ${data.get('product')}\n\n${data.get('message')}`;
-  prepareInquiryDraft(event.currentTarget, 'Product inquiry: ' + data.get('product'), body);
-});
+const submitInquiry = form => {
+  form.addEventListener('submit', async event => {
+    event.preventDefault();
+    const status = form.querySelector('.form-status');
+    const button = form.querySelector('button[type="submit"]');
+    const data = new FormData(form);
+    data.set('inquiry_type', form.dataset.inquiry || 'Product enquiry');
+    data.set('_company', '');
+    if (status) status.textContent = 'Sending your submission…';
+    if (button) button.disabled = true;
+    try {
+      const response = await fetch(document.documentElement.dataset.inquiryEndpoint || 'php-backend/submit-inquiry.php', { method: 'POST', body: data, headers: { 'Accept': 'application/json' } });
+      const result = await response.json();
+      if (status) status.textContent = result.message || (result.ok ? 'Submission sent.' : 'Unable to send submission.');
+      if (result.ok) form.reset();
+    } catch (_) {
+      if (status) status.textContent = 'Could not reach the email service. Please try again or contact us directly.';
+    } finally {
+      if (button) button.disabled = false;
+    }
+  });
+};
+document.querySelectorAll('form[data-inquiry], #quote-form').forEach(submitInquiry);
 document.querySelector('#year').textContent = new Date().getFullYear();
 
 // Public enquiry forms prepare drafts; they never report an unsent message as sent.
@@ -112,17 +134,6 @@ document.querySelectorAll('form[data-inquiry]').forEach(form => {
     }
     field.value = value.slice(0, 150);
   }
-  form.addEventListener('submit', event => {
-    event.preventDefault();
-    const data = new FormData(form);
-    const body = Array.from(data, ([name, value]) => {
-      const readableValue = value instanceof File
-        ? (value.name ? value.name + ' (attach this file manually before sending)' : 'No file selected')
-        : value;
-      return name[0].toUpperCase() + name.slice(1) + ': ' + readableValue;
-    }).join('\n\n');
-    prepareInquiryDraft(form, form.dataset.inquiry, body, form.dataset.inquiry === 'Career application');
-  });
 });
 const catalogueFilter = document.querySelector('[data-product-filter]');
 catalogueFilter?.addEventListener('change', () => {

@@ -12,7 +12,7 @@ try {
     header('Content-Type: application/xml; charset=utf-8');
     echo "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n<urlset xmlns=\"http://www.sitemaps.org/schemas/sitemap/0.9\">\n";
     foreach ($pages as $page) {
-        $path = $page['slug'] === 'home' ? '/' : '/' . rawurlencode((string)$page['slug']) . '.html';
+        $path = $page['slug'] === 'home' ? '/index' : '/' . rawurlencode((string)$page['slug']);
         $location = htmlspecialchars($baseUrl . $path, ENT_XML1 | ENT_QUOTES, 'UTF-8');
         $lastModified = date('Y-m-d', strtotime((string)$page['updated_at']));
         echo "  <url><loc>{$location}</loc><lastmod>{$lastModified}</lastmod></url>\n";

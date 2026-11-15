@@ -20,6 +20,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 'order_button_url' => trim((string)($_POST['order_button_url'] ?? '')),
                 'contact_phone' => trim((string)($_POST['contact_phone'] ?? '')),
                 'contact_email' => trim((string)($_POST['contact_email'] ?? '')),
+                'submission_email' => trim((string)($_POST['submission_email'] ?? '')),
                 'contact_address' => trim((string)($_POST['contact_address'] ?? '')),
                 'contact_map_embed_url' => trim((string)($_POST['contact_map_embed_url'] ?? '')),
                 'owner_whatsapp_number' => preg_replace('/\D+/', '', (string)($_POST['owner_whatsapp_number'] ?? '')) ?? '',
@@ -43,6 +44,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             );
             if (!$baseValid || !$validOptionalUrl($values['order_button_url']) || !$mapValid
                 || ($values['contact_email'] !== '' && !filter_var($values['contact_email'], FILTER_VALIDATE_EMAIL))
+                || ($values['submission_email'] !== '' && !filter_var($values['submission_email'], FILTER_VALIDATE_EMAIL))
                 || ($values['owner_whatsapp_number'] !== '' && !preg_match('/^[0-9]{8,15}$/', $values['owner_whatsapp_number']))
                 || strlen($values['robots_txt_content']) > 20000) {
                 $error = 'Please check the website URL, social URLs, email, Google Maps embed URL, WhatsApp number, and robots.txt length.';
@@ -104,6 +106,7 @@ $field = static fn(string $key, string $fallback = ''): string => (string)($sett
 <head>
   <meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
   <title>SEO &amp; Site Settings | Extek Profiles</title>
+  <link rel="icon" type="image/x-icon" href="<?= h(app_url('/assets/favicon.ico')) ?>">
   <link rel="stylesheet" href="<?= h(app_url('/fonts.css')) ?>"><link rel="stylesheet" href="<?= h(app_url('/styles.css')) ?>">
   <style>
     .settings-page{background:#f3f7ef;color:#2a3e49}.settings-page .settings-card{box-shadow:0 12px 35px #2a3e490a}.settings-page .settings-error{background:#fde8e7}
@@ -124,6 +127,7 @@ $field = static fn(string $key, string $fallback = ''): string => (string)($sett
       <label>Main Contact Button URL<input name="order_button_url" value="<?= h($field('order_button_url', 'contact.html')) ?>" maxlength="1000" placeholder="contact.html or https://example.com/contact"><small class="settings-hint">Use a site path such as contact.html or a full URL.</small></label>
       <label>Contact Phone<input name="contact_phone" value="<?= h($field('contact_phone', '+91 96769 10662')) ?>" maxlength="100" placeholder="+91 96769 10662"></label>
       <label>Contact Email<input name="contact_email" type="email" value="<?= h($field('contact_email', 'info@extekprofiles.com')) ?>" maxlength="255" placeholder="info@extekprofiles.com"></label>
+      <label>Submission Email<input name="submission_email" type="email" value="<?= h($field('submission_email', 'etakarlapallipratap@gmail.com')) ?>" maxlength="255" required><small class="settings-hint">Contact and career form submissions are sent to this address.</small></label>
       <label class="settings-wide">Contact Address<textarea name="contact_address" maxlength="2000" placeholder="Survey No. 21, Mahadevpur Village, Bibinagar"><?= h($field('contact_address', 'Survey No. 21, Mahadevpur Village, Bibinagar – 508126, Yadadri Bhuvanagiri District, Telangana, India.')) ?></textarea></label>
       <label class="settings-wide">Contact Map Embed URL<input name="contact_map_embed_url" type="url" value="<?= h($field('contact_map_embed_url', 'https://www.google.com/maps?output=embed&q=Survey+No.+21,+Mahadevpur+Village,+Bibinagar,+Telangana+508126,+India')) ?>" maxlength="1500" placeholder="https://www.google.com/maps?output=embed&amp;q=..."><small class="settings-hint">Paste only the Google Maps iframe src URL for the Extek facility.</small></label>
       <label>Owner WhatsApp Number<input name="owner_whatsapp_number" inputmode="numeric" value="<?= h($field('owner_whatsapp_number')) ?>" maxlength="15" placeholder="Optional: country code and number"><small class="settings-hint">Optional. If set, contact form enquiries open WhatsApp with the form details.</small></label>

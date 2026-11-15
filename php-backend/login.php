@@ -47,6 +47,7 @@ $token = csrf_token();
 <head>
   <meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
   <title>Admin Login | Extek Profiles</title>
+  <link rel="icon" type="image/x-icon" href="<?= h(app_url('/assets/favicon.ico')) ?>">
   <link rel="icon" href="/favicon.ico" sizes="any">
   <link rel="stylesheet" href="<?= h(app_url('/fonts.css')) ?>"><link rel="stylesheet" href="<?= h(app_url('/styles.css')) ?>">
 </head>
