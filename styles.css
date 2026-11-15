@@ -46,7 +46,8 @@
   .site-header .nav-cta span{font-size:17px}
 }
 @media(max-width:1350px){
-  .site-header .nav-cta{flex:0 0 auto;margin-left:auto;padding:12px 17px;font-size:14px;font-weight:700}
+  .site-header .menu-toggle{order:2;margin-left:auto}
+  .site-header .nav-cta{order:3;flex:0 0 auto;margin-left:0;padding:12px 17px;font-size:14px;font-weight:700}
   .site-header .nav-cta span{font-size:17px}
   .source-navigation>.dropdown>button{display:flex;align-items:center;justify-content:space-between;font-weight:700}
   .source-navigation>.dropdown>button span{font-size:13px;line-height:1;transition:transform .2s ease}
@@ -97,6 +98,8 @@
 }
 @media(max-width:1350px){
   .source-navigation .dropdown-menu .dropdown-menu{position:static;min-width:0;width:auto;max-height:none;margin:0 0 5px 10px;padding:0 0 0 10px;border:0;border-left:2px solid var(--border);border-radius:0;box-shadow:none;overflow:visible}
+  .source-navigation>.dropdown{width:100%}
+  .source-navigation>.dropdown>.dropdown-menu{position:static;width:100%;min-width:0;max-height:none;margin:0;padding:0 15px;background:transparent;border:0;border-radius:0;box-shadow:none;overflow:visible}
   .source-navigation .dropdown-menu .quality-submenu>button{display:flex;align-items:center;justify-content:space-between;width:100%;padding:10px 12px;border:0;background:transparent;color:inherit;text-align:left;font-size:15px;font-weight:700}
 }
 .quality-checks{scroll-margin-top:120px}
