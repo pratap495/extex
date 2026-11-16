@@ -214,3 +214,33 @@
 .blog-card{padding:32px;background:#fff;border:1px solid var(--border);border-radius:22px;box-shadow:0 12px 34px #2a3e4910}
 .blog-card h3{font-size:24px;margin:15px 0}.blog-card p:not(.eyebrow){margin-bottom:18px}.blog-article{max-width:900px}.blog-article>h2{font-size:clamp(32px,4vw,48px);margin:14px 0}.blog-article-intro{font-size:20px;line-height:1.65;margin:18px 0 40px}.blog-article section{margin:32px 0}.blog-article section h3{font-size:24px;margin-bottom:12px}.blog-article section p{font-size:17px}.blog-article .button{margin-top:15px}.blog-back-link{display:inline-block;margin-left:22px;color:#527d33;font-weight:600}
 @media(max-width:700px){.blog-card-grid{grid-template-columns:1fr}.blog-card{padding:25px}.blog-back-link{margin:20px 0 0;display:block}}
+
+@media (hover: hover) and (min-width: 701px) { .source-navigation > .company-dropdown:hover > .dropdown-menu, .source-navigation > .company-dropdown:focus-within > .dropdown-menu { display: block; } }
+
+
+.product-dropdown > a{display:block;padding:15px 0;white-space:nowrap}.product-dropdown > a:hover{color:#507f31}@media (hover:hover) and (min-width:701px){.product-dropdown:hover>.dropdown-menu,.product-dropdown:focus-within>.dropdown-menu{display:block}}
+
+
+.capability-list{display:grid;gap:70px}.capability-feature{display:grid;grid-template-columns:1fr 1fr;align-items:center;gap:clamp(30px,6vw,86px)}.capability-feature:nth-child(even) .capability-image{order:2}.capability-feature:nth-child(even) .capability-copy{order:1}.capability-image img{width:100%;height:390px;border-radius:16px;object-fit:cover}.capability-copy h2{margin:10px 0 18px}.capability-copy p:not(.eyebrow){margin-bottom:20px}@media(max-width:700px){.capability-feature{grid-template-columns:1fr;gap:24px}.capability-feature:nth-child(even) .capability-image,.capability-feature:nth-child(even) .capability-copy{order:initial}.capability-image img{height:280px}}
+
+
+.hero-inner{justify-content:center;align-items:center;text-align:center}.hero-copy{max-width:900px!important;margin-inline:auto}.hero-copy .eyebrow{justify-content:center}.hero-actions{justify-content:center}.hero-description{margin-inline:auto}
+
+
+@media(min-width:761px){.hero-copy{transform:translateY(-55px)}}@media(max-width:760px){.hero-copy{transform:translateY(-25px)}}
+
+
+@media(min-width:761px){.hero-copy{transform:translateY(-125px)}}
+
+
+.about{align-items:center;gap:clamp(40px,5vw,80px)}.about-visual{display:block;width:100%;max-width:none;margin:0;grid-template-columns:none;grid-template-rows:none;gap:0}.about-main{width:100%;height:540px;grid-column:auto;grid-row:auto;object-fit:cover}.strengths{grid-template-columns:1fr;max-width:none;gap:16px;margin:32px 0}.strengths>div{align-items:center}@media(max-width:760px){.about{gap:35px}.about-main{height:380px}.strengths{gap:14px}}
+
+
+.industries .industry-grid{display:flex;gap:24px;overflow-x:auto;padding:8px 2px 20px;border-radius:0;scroll-snap-type:x mandatory;scrollbar-color:var(--brand) var(--paper);scrollbar-width:thin}.industries .industry-card{position:relative;flex:0 0 clamp(210px,20vw,270px);height:360px;min-height:360px;border-radius:18px;scroll-snap-align:start}.industries .industry-card::after{content:'';position:absolute;inset:0;background:linear-gradient(180deg,#152b3510 20%,#152b3560 100%);pointer-events:none}.industries .industry-card>img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;transition:transform .5s}.industries .industry-card:hover>img{transform:scale(1.05)}.industries .industry-card>div{position:absolute;z-index:1;top:50%;bottom:auto;left:0;right:0;transform:translateY(-50%);padding:18px 10px;border:0;border-radius:0;background:#ffffffdb;color:var(--slate);backdrop-filter:blur(5px);text-align:center}.industries .industry-card h3{justify-content:center;margin:0;font-size:22px;font-weight:700;color:var(--slate)}.industries .industry-card h3 b{display:none}.industries .industry-card>div>span,.industries .industry-card p{display:none}@media(max-width:760px){.industries .industry-card{flex-basis:76vw;height:310px;min-height:310px}}
+
+
+.industries .industry-grid{scrollbar-width:none}.industries .industry-grid::-webkit-scrollbar{display:none}
+
+
+.industries .industry-grid.auto-scrolling{scroll-snap-type:none}
+

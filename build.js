@@ -16,7 +16,7 @@ fs.mkdirSync(path.join('dist', 'login'), { recursive: true });
 const loginRouteHtml = fs.readFileSync('login.html', 'utf8').replace('<head>', '<head><base href="/">');
 fs.writeFileSync(path.join('dist', 'login', 'index.html'), loginRouteHtml);
 fs.copyFileSync('assets/homepage.js', 'dist/assets/homepage.js');
-for (const name of ['favicon.ico', 'favicon.png']) fs.copyFileSync(path.join('assets', name), path.join('dist', name));
+for (const name of ['favicon.ico', 'favicon.png']) { fs.copyFileSync(path.join('assets', name), path.join('dist', name)); fs.copyFileSync(path.join('assets', name), path.join('dist/assets', name)); }
 // Remove the obsolete browser entrypoint from earlier local builds.
 fs.rmSync('dist/app.js', { force: true });
 const html = pages.map(name => fs.readFileSync(name, 'utf8')).join('\n');

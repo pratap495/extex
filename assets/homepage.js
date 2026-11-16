@@ -31,6 +31,7 @@ menuToggle.addEventListener('click', () => {
 document.querySelectorAll('.dropdown > button').forEach(button => {
   button.addEventListener('click', () => {
     const dropdown = button.parentElement;
+    if (dropdown.classList.contains('company-dropdown') && matchMedia('(hover: hover) and (min-width: 701px)').matches) return;
     const open = !dropdown.classList.contains('open');
     const ancestors = [];
     let parent = dropdown.parentElement.closest('.dropdown');
@@ -62,6 +63,42 @@ navigation.querySelectorAll('a').forEach(link => link.addEventListener('click', 
   navigation.classList.remove('open');
   menuToggle.setAttribute('aria-expanded', 'false');
 }));
+const industryTrack = document.querySelector('.industries .industry-grid');
+if (industryTrack && !matchMedia('(prefers-reduced-motion: reduce)').matches) {
+  const originalCards = Array.from(industryTrack.children);
+  originalCards.forEach(card => {
+    const clone = card.cloneNode(true);
+    clone.setAttribute('aria-hidden', 'true');
+    clone.inert = true;
+    industryTrack.appendChild(clone);
+  });
+  industryTrack.classList.add('auto-scrolling');
+  let paused = false;
+  let previousTime = 0;
+  let loopWidth = 0;
+  const measureLoop = () => {
+    loopWidth = originalCards.length
+      ? industryTrack.children[originalCards.length].offsetLeft - industryTrack.children[0].offsetLeft
+      : 0;
+  };
+  measureLoop();
+  window.addEventListener('resize', measureLoop, { passive: true });
+  industryTrack.addEventListener('pointerenter', () => { paused = true; });
+  industryTrack.addEventListener('pointerleave', () => { paused = false; });
+  industryTrack.addEventListener('focusin', () => { paused = true; });
+  industryTrack.addEventListener('focusout', event => {
+    if (!industryTrack.contains(event.relatedTarget)) paused = false;
+  });
+  const scrollIndustries = time => {
+    if (previousTime && !paused && document.visibilityState === 'visible' && loopWidth > 0) {
+      industryTrack.scrollLeft += (time - previousTime) * 0.025;
+      if (industryTrack.scrollLeft >= loopWidth) industryTrack.scrollLeft -= loopWidth;
+    }
+    previousTime = time;
+    requestAnimationFrame(scrollIndustries);
+  };
+  requestAnimationFrame(scrollIndustries);
+}
 if ('IntersectionObserver' in window && !matchMedia('(prefers-reduced-motion: reduce)').matches) {
   const observer = new IntersectionObserver(entries => entries.forEach(entry => {
     if (entry.isIntersecting) { entry.target.classList.add('visible'); observer.unobserve(entry.target); }
